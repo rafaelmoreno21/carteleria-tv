@@ -221,8 +221,8 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
 
   // Autenticación de Administrador
-  const ADMIN_USER = 'admin';
-  const ADMIN_PASS = 'Horse2026';
+  const ADMIN_USER = 'HorseRafael';
+  const ADMIN_PASS = '7>V+">Cl£6Y2';
   const AUTH_TOKEN = 'carteleria-auth-admin-Horse2026-secure-token';
 
   // Middleware para proteger rutas de administración
