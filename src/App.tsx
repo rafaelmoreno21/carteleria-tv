@@ -1300,17 +1300,7 @@ export default function App() {
               <span className="font-medium">admin</span>
             </div>
 
-            {/* Botón Descargar Proyecto Completo ZIP */}
-            <a
-              href="/carteleria-tv-completo.zip"
-              download="carteleria-tv-completo.zip"
-              className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold border border-amber-500 flex items-center gap-1.5 transition shadow"
-              title="Descargar código completo del proyecto en archivo ZIP para usar en cualquier hosting"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Exportar ZIP</span>
-              <span className="sm:hidden">ZIP</span>
-            </a>
+         
 
             <button
               onClick={() => setShowQrModal(true)}
