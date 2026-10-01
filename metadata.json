@@ -1,0 +1,8 @@
+{
+  "name": "Cartelería Digital TV - Digital Signage",
+  "description": "Sistema de cartelería digital para transmitir imágenes y videos a pantallas y televisores corporativos en tiempo real con Express, Multer y Socket.io.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
