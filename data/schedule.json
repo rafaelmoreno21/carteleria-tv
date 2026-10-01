@@ -1,0 +1,40 @@
+{
+  "monday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": []
+  },
+  "tuesday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": []
+  },
+  "wednesday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": []
+  },
+  "thursday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": [
+      "1790854090268-videoplayback.mp4",
+      "1790854080446-logo_blanco_sin_fondo.png"
+    ]
+  },
+  "friday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": []
+  },
+  "saturday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": []
+  },
+  "sunday": {
+    "enabled": true,
+    "intervalSeconds": 10,
+    "items": []
+  }
+}

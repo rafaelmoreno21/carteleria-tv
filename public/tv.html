@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pantalla Cartelería Digital TV</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000000;
+      z-index: 10;
+    }
+
+    /* Elementos multimedia ocupando el máximo tamaño sin deformarse */
+    .media-element {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      background-color: #000000;
+      animation: mediaFadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes mediaFadeIn {
+      from { opacity: 0.1; }
+      to { opacity: 1; }
+    }
+
+    /* Pantalla en espera / standby */
+    #standby-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      max-width: 850px;
+    }
+
+    .pulse-dot {
+      width: 22px;
+      height: 22px;
+      background-color: #0d6efd;
+      border-radius: 50%;
+      margin-bottom: 24px;
+      box-shadow: 0 0 25px #0d6efd;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+
+    #standby-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    #standby-sub {
+      font-size: 1.15rem;
+      color: #8fa0bc;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .info-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-size: 0.95rem;
+      color: #60a5fa;
+      font-family: monospace;
+      word-break: break-all;
+      margin-bottom: 15px;
+    }
+
+    /* Barra de estado discreta para TV (oculta para pantalla limpia) */
+    #status-bar {
+      display: none !important;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #10b981;
+    }
+
+    .status-dot.polling {
+      background-color: #f59e0b;
+    }
+
+    .status-dot.error {
+      background-color: #ef4444;
+    }
+
+    #live-clock {
+      font-family: monospace;
+      font-weight: 600;
+      color: #93c5fd;
+      border-left: 1px solid rgba(255, 255, 255, 0.2);
+      padding-left: 8px;
+    }
+
+    /* Botón flotante para activar pantalla completa en el TV */
+    #fullscreen-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(13, 110, 253, 0.9);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+      transition: opacity 0.4s ease, transform 0.2s ease;
+    }
+
+    #fullscreen-btn:focus, #fullscreen-btn:hover {
+      background: #0d6efd;
+      transform: scale(1.05);
+      outline: 2px solid #ffffff;
+    }
+
+    /* Marca de agua (solo logo transparente, sin recuadro ni fondo ni etiqueta) */
+    #watermark-overlay {
+      display: none;
+      position: absolute;
+      top: 28px;
+      right: 28px;
+      z-index: 50;
+      background: transparent;
+      border: none;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      pointer-events: none;
+      animation: watermarkFade 0.6s ease-out;
+      transition: all 0.3s ease;
+    }
+
+    @keyframes watermarkFade {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    #watermark-logo {
+      max-height: 85px;
+      max-width: 240px;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.75));
+    }
+
+    #watermark-badge {
+      display: none !important;
+    }
+
+    /* Ocultar cursor en TVs tras inactividad */
+    body.hide-cursor {
+      cursor: none !important;
+    }
+
+    /* Mensaje de error si falla video */
+    #error-toast {
+      display: none;
+      position: absolute;
+      bottom: 25px;
+      left: 20px;
+      background: rgba(185, 28, 28, 0.9);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      z-index: 200;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Barra de estado discreta -->
+  <div id="status-bar">
+    <div id="statusDot" class="status-dot"></div>
+    <span id="statusText">Conectando...</span>
+    <span id="playlistBadge" style="display:none; color: #6ee7b7; background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.4); padding: 1px 8px; border-radius: 12px; font-weight: 600; font-size: 0.7rem;">⟳ Bucle Infinito</span>
+    <span id="live-clock">--:--:--</span>
+  </div>
+
+  <!-- Notificación de error -->
+  <div id="error-toast"></div>
+
+  <!-- Botón de pantalla completa enfocado para el control remoto -->
+  <button id="fullscreen-btn" onclick="toggleFullscreen()" tabindex="1">
+    ⛶ Pantalla Completa
+  </button>
+
+  <!-- Contenedor dinámico donde se inyectan las imágenes o videos sin recargar -->
+  <div id="container">
+    <div id="standby-screen">
+      <div class="pulse-dot"></div>
+      <div id="standby-title">PANTALLA CONECTADA</div>
+      <div id="standby-sub">
+        Esta pantalla se actualizará automáticamente cuando transmitas una imagen o video desde el panel web.
+      </div>
+      <div class="info-card" id="currentUrlTag">Cargando URL...</div>
+    </div>
+  </div>
+
+  <!-- Marca de agua y etiqueta fija abajo a la derecha -->
+  <div id="watermark-overlay">
+    <img id="watermark-logo" src="" alt="Logo" style="display:none;" />
+    <span id="watermark-badge">TRANSMISIÓN EN VIVO</span>
+  </div>
+
+  <!-- Cargar Socket.io de forma defensiva -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    // Variables de control y referencias DOM
+    var container = document.getElementById('container');
+    var statusDot = document.getElementById('statusDot');
+    var statusText = document.getElementById('statusText');
+    var liveClock = document.getElementById('live-clock');
+    var currentUrlTag = document.getElementById('currentUrlTag');
+    var fullscreenBtn = document.getElementById('fullscreen-btn');
+    var errorToast = document.getElementById('error-toast');
+    var playlistBadge = document.getElementById('playlistBadge');
+    var watermarkOverlay = document.getElementById('watermark-overlay');
+    var watermarkLogo = document.getElementById('watermark-logo');
+    var watermarkBadge = document.getElementById('watermark-badge');
+
+    var currentContentHash = '';
+    var connectionMode = 'Iniciando';
+
+    // 1. Mostrar URL actual
+    if (currentUrlTag) {
+      currentUrlTag.textContent = window.location.href;
+    }
+
+    // 2. Reloj en tiempo real (segundero activo para asegurar que el navegador del TV no esté colgado)
+    function updateClock() {
+      var now = new Date();
+      var h = String(now.getHours()).padStart(2, '0');
+      var m = String(now.getMinutes()).padStart(2, '0');
+      var s = String(now.getSeconds()).padStart(2, '0');
+      if (liveClock) {
+        liveClock.textContent = h + ':' + m + ':' + s;
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 3. Control de Pantalla Completa (compatible con control remoto TV y tecla Enter/OK)
+    function toggleFullscreen() {
+      try {
+        var doc = document.documentElement;
+        var isFull = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        
+        if (!isFull) {
+          if (doc.requestFullscreen) {
+            doc.requestFullscreen();
+          } else if (doc.webkitRequestFullscreen) {
+            doc.webkitRequestFullscreen();
+          } else if (doc.mozRequestFullScreen) {
+            doc.mozRequestFullScreen();
+          } else if (doc.msRequestFullscreen) {
+            doc.msRequestFullscreen();
+          }
+          if (fullscreenBtn) {
+            fullscreenBtn.textContent = 'Salir de Pantalla Completa';
+            setTimeout(function() { fullscreenBtn.style.opacity = '0'; }, 3000);
+          }
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+          }
+          if (fullscreenBtn) {
+            fullscreenBtn.textContent = '⛶ Pantalla Completa';
+            fullscreenBtn.style.opacity = '1';
+          }
+        }
+      } catch (err) {
+        console.warn('[TV] Fullscreen error:', err);
+      }
+    }
+
+    // Soporte para control remoto de TV (teclas Enter, OK, 13)
+    document.addEventListener('keydown', function(e) {
+      if (e.keyCode === 13 || e.key === 'Enter') {
+        toggleFullscreen();
+      }
+    });
+
+    // Ocultar cursor en TV tras 3 segundos de inactividad
+    var cursorTimer;
+    document.addEventListener('mousemove', function() {
+      document.body.classList.remove('hide-cursor');
+      if (fullscreenBtn) fullscreenBtn.style.opacity = '1';
+      clearTimeout(cursorTimer);
+      cursorTimer = setTimeout(function() {
+        document.body.classList.add('hide-cursor');
+        if (fullscreenBtn) fullscreenBtn.style.opacity = '0';
+      }, 3500);
+    });
+
+    // Prevención de apagado de pantalla en televisores (Screen Wake Lock API de forma segura)
+    function initWakeLock() {
+      try {
+        if ('wakeLock' in navigator && navigator.wakeLock.request) {
+          navigator.wakeLock.request('screen').then(function() {
+            console.log('[TV] Wake Lock activo');
+          }).catch(function(e) {
+            console.warn('[TV] Wake Lock no disponible');
+          });
+        }
+      } catch (err) {}
+    }
+    initWakeLock();
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') {
+        initWakeLock();
+      }
+    });
+
+    function showError(msg) {
+      if (!errorToast) return;
+      errorToast.textContent = msg;
+      errorToast.style.display = 'block';
+      setTimeout(function() {
+        errorToast.style.display = 'none';
+      }, 6000);
+    }
+
+    // 4. Función de actualización del contenido en pantalla
+    function updateScreen(data) {
+      if (!data || !data.url || data.type === 'clear') {
+        currentContentHash = 'clear';
+        if (playlistBadge) playlistBadge.style.display = 'none';
+        if (watermarkOverlay) watermarkOverlay.style.display = 'none';
+        container.innerHTML = 
+          '<div id="standby-screen">' +
+            '<div class="pulse-dot"></div>' +
+            '<div id="standby-title">PANTALLA CONECTADA</div>' +
+            '<div id="standby-sub">Esperando transmisión desde el panel web de Cartelería Digital...</div>' +
+            '<div class="info-card">' + window.location.href + '</div>' +
+          '</div>';
+        return;
+      }
+
+      if (data.playlistEnabled && typeof data.playlistIndex === 'number' && data.playlistTotal) {
+        if (playlistBadge) {
+          playlistBadge.style.display = 'inline-block';
+          var dayName = data.currentDay ? ('[' + data.currentDay.toUpperCase() + '] ') : '';
+          playlistBadge.textContent = '⟳ Bucle ' + dayName + '(' + (data.playlistIndex + 1) + '/' + data.playlistTotal + ')';
+        }
+      } else if (playlistBadge) {
+        playlistBadge.style.display = 'none';
+      }
+
+      // Actualizar Marca de Agua / Etiqueta inferior derecha
+      if (watermarkOverlay) {
+        var wm = data.watermark;
+        var isVideo = data.type === 'video';
+        // Mostrar siempre en videos si enabled, o si no está restringido solo a videos
+        var shouldShowWatermark = wm && wm.enabled && (!wm.applyToVideosOnly || isVideo);
+
+        if (shouldShowWatermark) {
+          watermarkOverlay.style.display = 'block';
+          watermarkOverlay.style.opacity = '1';
+          watermarkOverlay.style.top = '28px';
+          watermarkOverlay.style.bottom = 'auto';
+          watermarkOverlay.style.left = 'auto';
+          watermarkOverlay.style.right = '28px';
+
+          // Solo Logotipo transparente (sin etiqueta ni recuadro)
+          if (wm.logoUrl) {
+            watermarkLogo.src = wm.logoUrl;
+            watermarkLogo.style.display = 'block';
+          } else {
+            // Logotipo predeterminado elegante en SVG si no se subió uno personalizado
+            watermarkLogo.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='15' x='2' y='7' rx='2' ry='2'%3E%3C/rect%3E%3Cpolyline points='17 2 12 7 7 2'%3E%3C/polyline%3E%3C/svg%3E";
+            watermarkLogo.style.display = 'block';
+          }
+
+          // No mostrar etiqueta en pantalla
+          if (watermarkBadge) {
+            watermarkBadge.style.display = 'none';
+          }
+        } else {
+          watermarkOverlay.style.display = 'none';
+        }
+      }
+
+      var newHash = data.url + '_' + (data.timestamp || '');
+      if (currentContentHash === newHash) {
+        // Ya está proyectándose este medio exactamente
+        return;
+      }
+      currentContentHash = newHash;
+
+      console.log('[TV] Proyectando nuevo medio:', data.type, data.url);
+      container.innerHTML = '';
+
+      if (data.type === 'video') {
+        var video = document.createElement('video');
+        video.className = 'media-element';
+        video.src = data.url;
+        video.autoplay = true;
+        video.loop = false; // Permitir que termine para avanzar al siguiente medio en el bucle
+        video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
+        video.setAttribute('muted', '');
+        video.setAttribute('autoplay', '');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+
+        // Al terminar el video, avanzar inmediatamente en el bucle infinito
+        video.onended = function() {
+          console.log('[TV] Video finalizado. Solicitando siguiente elemento del bucle...');
+          if (socket && socketConnected) {
+            socket.emit('video-ended');
+          }
+          try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/playlist/next', true);
+            xhr.send();
+          } catch (e) {}
+        };
+
+        video.onerror = function() {
+          console.error('[TV] Error reproduciendo video:', video.error);
+          showError('No se pudo reproducir este video. Pasando al siguiente medio...');
+          setTimeout(function() {
+            if (socket && socketConnected) socket.emit('video-ended');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/playlist/next', true);
+            xhr.send();
+          }, 3000);
+        };
+
+        video.onloadedmetadata = function() {
+          var p = video.play();
+          if (p && typeof p.catch === 'function') {
+            p.catch(function(e) {
+              console.warn('[TV] Reintento forzado de reproducción...', e);
+              video.muted = true;
+              video.play();
+            });
+          }
+        };
+
+        container.appendChild(video);
+      } else {
+        var img = document.createElement('img');
+        img.className = 'media-element';
+        img.src = data.url;
+        img.alt = data.fileName || 'Cartelería Digital';
+
+        img.onerror = function() {
+          showError('Error al cargar la imagen seleccionada.');
+        };
+
+        container.appendChild(img);
+      }
+    }
+
+    // 5. Conexión Socket.io con configuración especial para Smart TV
+    var socketConnected = false;
+    var socket = null;
+
+    if (typeof io !== 'undefined') {
+      try {
+        socket = io({
+          transports: ['polling', 'websocket'], // Priorizar polling para soportar Smart TVs con websockets bloqueados
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 15000
+        });
+
+        socket.on('connect', function() {
+          socketConnected = true;
+          statusDot.className = 'status-dot';
+          statusText.textContent = 'En Línea (WebSocket)';
+          console.log('[TV] Conectado por WebSocket.');
+          checkCurrentHttp();
+        });
+
+        socket.on('disconnect', function() {
+          socketConnected = false;
+          statusDot.className = 'status-dot polling';
+          statusText.textContent = 'Sincronizando (HTTP)';
+        });
+
+        socket.on('cambiar-contenido', function(data) {
+          updateScreen(data);
+        });
+
+        socket.on('media-updated', function(data) {
+          updateScreen(data);
+        });
+
+        socket.on('playlist-status', function(state) {
+          if (state && state.enabled && typeof state.currentIndex === 'number' && state.totalItems) {
+            if (playlistBadge) {
+              playlistBadge.style.display = 'inline-block';
+              var dayStr = state.activeDay ? ('[' + state.activeDay.toUpperCase() + '] ') : '';
+              playlistBadge.textContent = '⟳ Bucle ' + dayStr + '(' + (state.currentIndex + 1) + '/' + state.totalItems + ')';
+            }
+          } else if (playlistBadge) {
+            playlistBadge.style.display = 'none';
+          }
+        });
+      } catch (err) {
+        console.warn('[TV] Error al inicializar socket.io:', err);
+      }
+    }
+
+    // 6. MECANISMO DE RESPALDO CONTINUO (Smart Fallback HTTP Polling)
+    // Se ejecuta cada 3 segundos sin importar si el Smart TV soporta o no WebSockets
+    function checkCurrentHttp() {
+      var xhr = new XMLHttpRequest();
+      // Usar parámetro aleatorio para burlar el caché de navegadores viejos de Smart TV
+      xhr.open('GET', '/api/current?_t=' + Date.now(), true);
+      xhr.timeout = 5000;
+
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            if (!socketConnected) {
+              statusDot.className = 'status-dot polling';
+              statusText.textContent = 'En Línea (HTTP)';
+            }
+            if (data && data.current) {
+              updateScreen(data.current);
+            } else if (currentContentHash && currentContentHash !== 'clear') {
+              updateScreen(null);
+            }
+          } catch (e) {
+            console.warn('[TV] Error parseando respuesta:', e);
+          }
+        }
+      };
+
+      xhr.onerror = function() {
+        if (!socketConnected) {
+          statusDot.className = 'status-dot error';
+          statusText.textContent = 'Reconectando con la Nube...';
+        }
+      };
+
+      xhr.send();
+    }
+
+    // Iniciar verificación inmediata y programar sondeo continuo
+    checkCurrentHttp();
+    setInterval(checkCurrentHttp, 3000);
+  </script>
+</body>
+</html>

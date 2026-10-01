@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "label": "TRANSMISIÓN EN VIVO",
+  "logoUrl": "/uploads/1790854080446-logo_blanco_sin_fondo.png",
+  "tagBgColor": "#2563eb",
+  "tagTextColor": "#ffffff",
+  "opacity": 0.95,
+  "applyToVideosOnly": false,
+  "position": "top-right"
+}
